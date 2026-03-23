@@ -3,7 +3,15 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <string.h>
+#include <thread>
+#include <termios.h>
+#include <fcntl.h>
+#include <sys/signal.h>
+#include <sstream>
 
+
+using namespace std::chrono_literals;
 using namespace std;
 using namespace cv;
 
@@ -15,9 +23,48 @@ using namespace cv;
 #define v_low 16
 #define v_high 218
 
+#define BAUDRATE B115200
+#define MODEMDEVICE "dev/tty/AMA0"
+
+
+int uart0_filestream = -1;
 
 double Rmotor_speed = 20;
 double Lmotor_speed = 20;
+
+char buff[100];
+char rx_buff[100];
+int rx_lenth = 0;
+
+
+void init(){
+	uart0_filestream = open(MODEMDEVICE, O_RDWR, O_NOCTTY,O_NDELAY);
+	if(uart0_filestream == -1){
+		printf("Unable to open UART\n");
+		exit(-1);
+	}
+	struct termios options;
+	tcgetattr(uart0_filestream, &options);
+	options.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+	options.c_iflag = IGNPAR;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+	tcflush(uart0_filestream, TCIFLUSH);
+	tcsetattr(uart0_filestream, TCSANOW, &options);
+}
+
+void sendSpeed(int scenario, int L, int R){
+	sprintf(buff, "[%d][%d][%d]", scenario, R, L);
+	int count = write(uart0_filestream,&buff[0],strlen(buff));
+	if(count < 0){
+		printf("Error sending teh message");		
+	}
+	
+	
+	
+	
+	this_thread::sleep_for(200ms);
+}
 
 
 bool contour_compare(const vector<Point> &a,const vector<Point> &b){
@@ -41,7 +88,15 @@ int main() {
 	vector<vector<Point>> contours,green_cont,top,mid,bot;
     namedWindow("Frame");
     namedWindow("Edges");
-
+    
+    while(rx_lenth <= 0){
+		rx_lenth = read(uart0_filestream,(void*)rx_buff,9);
+	}
+	while(1){
+			sendSpeed(0,20,20);
+	}
+	
+	
     while (true) {
         if (!cam.getVideoFrame(frame, 1000)) {
             cout << "CAM ERROR" << endl;
