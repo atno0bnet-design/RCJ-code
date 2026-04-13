@@ -1,0 +1,269 @@
+
+#include "opencv2/opencv.hpp"
+#include <lccv.hpp>
+#include <vector>
+#include <algorithm>
+#include <math.h>
+#include <string.h>
+#include <thread>
+#include <termios.h>
+#include <fcntl.h>
+#include <sys/signal.h>
+#include <sstream>
+
+
+using namespace std::chrono_literals;
+using namespace std;
+using namespace cv;
+
+
+#define h_low 108
+#define h_high 148
+#define s_low 84
+#define s_high 184
+#define v_low 16
+#define v_high 218
+
+#define BAUDRATE B115200
+#define MODEMDEVICE "/dev/ttyAMA0"
+
+
+int uart0_filestream = -2;
+
+char buff[100];
+char rx_buff[100];
+int rx_length = 0;
+double kp = 0.5;
+int RS =25;
+int LS = 25;
+
+int targetSpeed = 30;
+
+void init(){
+	uart0_filestream = open(MODEMDEVICE, O_RDWR, O_NOCTTY,O_NDELAY);
+	if(uart0_filestream == -1){
+		printf("Unable to open UART\n");
+		exit(-1);
+	}
+	struct termios options;
+	tcgetattr(uart0_filestream, &options);
+	options.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+	options.c_iflag = IGNPAR;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+	tcflush(uart0_filestream, TCIFLUSH);
+	tcsetattr(uart0_filestream, TCSANOW, &options);
+}
+
+void sendSpeed(int scenario, int FL, int BL, int FR, int BR){
+	sprintf(buff, "[%d,%d,%d,%d,%d]", scenario, FL, BL, FR, BR);
+	int count = write(uart0_filestream,&buff[0],strlen(buff));
+	if(count < 0){
+		printf("Error sending teh message");		
+	}
+	
+	
+	
+	
+	this_thread::sleep_for(200ms);
+}
+
+
+bool contour_compare(const vector<Point> &a,const vector<Point> &b){
+	return contourArea(a)<contourArea(b);
+}
+int main() {
+	init();
+	
+	
+    lccv::PiCamera cam;
+    
+    cam.options->camera       = 0;
+    cam.options->video_width  = 1640;
+    cam.options->video_height = 1232;
+    cam.options->framerate    = 30;
+    cam.options->verbose      = false;
+    
+    cam.startVideo();
+
+    Mat frame;
+    Mat slices[3];
+    Mat gray, blurred, edges;
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	vector<vector<Point>> contours,green_cont,mid, left, right,botHaf;
+    namedWindow("Frame");
+    namedWindow("Edges");
+    
+    
+    
+    printf("waiting for pico\n");
+    
+    
+    while(rx_length <= 0){
+		rx_length = read(uart0_filestream,(void*)rx_buff,9);
+	}
+	
+	
+	int stop_motors = 0;
+	
+    while (true) {
+        if (!cam.getVideoFrame(frame, 1000)) {
+            cout << "CAM ERROR" << endl;
+            break;
+        }
+
+        if (frame.empty()) {
+            cout << "Frame empty" << endl;
+            break;
+        }
+        RS = 25;
+        LS = 25;
+      
+        resize(frame,frame,Size(frame.cols/4,frame.rows/4));
+        
+        
+        Mat img = frame.clone();
+        Mat display = img.clone();
+        Mat green = frame.clone();
+        cvtColor(green,green,COLOR_BGR2HSV);
+        medianBlur(frame,frame,3);
+        cvtColor(frame, frame, COLOR_BGR2HSV);
+
+        
+        //threhshold for green for sr
+        inRange(green,Scalar(56,84,29), Scalar(103,255,231),green);
+        //threshold green for home
+        //~ inRange(green,Scalar(77,168,59),Scalar(86,255,167), green);
+        //threshold for line sr
+        inRange(frame, Scalar(119, 106, 22), Scalar(131, 172,156), frame);
+        //home threshold for line
+        //threshold(frame,frame,170,255,THRESH_BINARY_INV);
+        //~ inRange(frame, Scalar(h_low,s_low,v_low),Scalar(h_high,s_high,v_high),frame);
+        
+        findContours(frame,contours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+        vector<Point> black_line, left_line, right_line, mid_line, bot_line;
+        if(contours.size()>0){
+			black_line = *max_element(contours.begin(), contours.end(), contour_compare);
+			drawContours(display,vector<vector<Point>>(1,black_line),0,Scalar(0,0,255), 3);
+		}
+		else{
+				cout<<"failure"<<endl;
+		}
+		
+
+		
+		findContours(green, green_cont,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		drawContours(display,green_cont,-1,Scalar(0,255,0), 3);
+		
+		Moments m = moments(black_line);		
+		double cx = m.m10/m.m00;
+		double error = ((float)m.m10/m.m00-(frame.cols/2.0))*kp;
+		cout<<"cx:"<<error<<endl;
+		circle(display,Point(cx,50),10,Scalar(255,255,255),-1);
+		line(display,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(0,255,0),LINE_8);
+		
+		
+		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
+		//double greenError = (img.cols/2.0)-cx;
+		
+		//double scaledown = 0.0009;
+
+		
+		Rect leftSlice(Point(0,0),Point(img.cols*(1/2.0),img.rows));
+		Rect midSlice(Point(img.cols*(1/5.0),0),Point(img.cols*(4/5.0),img.rows));
+		Rect rightSlice(Point(img.cols*(1/2.0),0),Point(img.cols,img.rows));
+		Rect botHalf(Point(0,img.rows/2),Point(img.cols,img.rows));
+		
+		Mat leftImg = frame(leftSlice);
+		Mat midImg = frame(midSlice);
+		Mat rightImg = frame(rightSlice);
+		Mat bottomHalf = frame(botHalf);
+		
+		Mat leftDisplay = display(leftSlice);
+		Mat midDisplay = display(midSlice);
+		Mat rightDisplay = display(rightSlice);
+		//imshow("mid",midDisplay);
+		
+		/*int leftArea = 0;
+		int rightArea  = 0;
+		int midArea = 0;
+		findContours(bottomHalf,botHaf,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		if(botHaf.size()>0){
+			bot_line = *max_element(botHaf.begin(), botHaf.end(), contour_compare);
+			if(contourArea(bot_line)<100){
+					kp = 0.006;
+					cout<<"kp change"<<endl;
+			}
+		}
+		
+		findContours(leftImg,left,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		if(left.size()>0){
+			left_line = *max_element(left.begin(), left.end(), contour_compare);
+			drawContours(leftDisplay,vector<vector<Point>>(1,left_line),0,Scalar(0,0,255), 3);
+			leftArea = contourArea(left_line);
+		}
+
+		findContours(midImg,mid,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		if(mid.size()>0){
+			mid_line = *max_element(mid.begin(), mid.end(), contour_compare);
+			drawContours(midDisplay,vector<vector<Point>>(1,mid_line),0,Scalar(0,0,255), 3);
+
+					cout<<"midsize"<<mid.size()<<endl;
+			midArea = contourArea(mid_line);
+		}
+		findContours(rightImg,right,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		if(right.size()>0){
+			right_line = *max_element(right.begin(), right.end(), contour_compare);
+			drawContours(rightDisplay,vector<vector<Point>>(1,right_line),0,Scalar(0,0,255), 3);
+			rightArea = contourArea(right_line);
+		}
+		
+		
+		printf("right area: %d\n", rightArea);
+		printf("left area: %d\n", leftArea);
+		
+		int lineError = rightArea - leftArea;
+		int delta = (lineError*kp);
+		LS = targetSpeed + delta;
+		RS = targetSpeed - delta;
+		
+		printf("delta: %d\n", delta);
+		
+		*/
+		
+		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
+		printf("-------\n"); 
+			RS -= error;
+			LS +=error;
+		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
+		
+		if(stop_motors){
+			sendSpeed(0, 0, 0, 0, 0);
+		}
+		else{
+			sendSpeed(0, LS, LS, RS, RS);
+		}
+		
+		
+			
+		//imshow("Left", leftDisplay);
+		imshow("Mid", midDisplay);
+		//imshow("Right", rightDisplay);	
+		
+        imshow("color+contour", display);
+         
+        int key = waitKey(1);
+        if (key == 'q') break;
+        else if(key == ' ') stop_motors = !stop_motors;
+        //else if(key == 'g') stop_motors = 0;
+    }
+
+	sendSpeed(0, 0, 0, 0, 0);
+    destroyAllWindows();
+    cam.stopVideo();
+    return 0;
+}
