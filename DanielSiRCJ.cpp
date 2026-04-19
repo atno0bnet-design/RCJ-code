@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include <thread>
+#include <chrono>
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/signal.h>
@@ -27,7 +28,7 @@ using namespace cv;
 #define BAUDRATE B115200
 #define MODEMDEVICE "/dev/ttyAMA0"
 
-
+int counter =0; 
 int uart0_filestream = -2;
 
 char buff[100];
@@ -232,40 +233,42 @@ int main() {
 		printf("delta: %d\n", delta);
 		
 		*/
+		
 		for(int i = 0;i<(int)green_cont.size();i++){
 			int cy = 0;
 			//finds centroid of the green suqare so we can orient it so it is in the center of screen
 			Moments green_moment = moments(green_cont[i]);
 			if(contourArea(green_cont[i])!=0){
 				cy = static_cast<int>(green_moment.m01/green_moment.m00);
-			}
+			}  
 			
 			
-			if(contourArea(green_cont[i])>5000&&cy>=170){
-				cout<<"cy"<<cy<<endl;
-				cout<<"contourArea"<<contourArea(green_cont[i])<<endl;
+			if(contourArea(green_cont[i])>5000&&(cy>=190||counter!=0)){
 				Rect green_square = boundingRect(green_cont[i]);
 				rectangle(display,green_square,Scalar(255,0,0),2);
 				Point left,top, right,bottom;
 				cout<<green_square.x<<" "<<green_square.y<<endl;
 				top = Point(green_square.x,green_square.y);
 				top.x += green_square.width/2;
-				top.y -= 30;
+				top.y -= 15;
 				//~ stop_motors = 1;
 				circle(display,top,10,Scalar(255,0,0),-1);
 				Vec3b color = frame.at<Vec3b>(top.x,top.y);
 				cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 				
-				if(color[0]==255){
+				//if(color[0]==255){
 					left.x = green_square.x;
 					left.y = green_square.y;
 					if(left.x<frame.cols/2){
 						cout<<"left green"<<endl;
+						counter++;
 					}
 					else{
 						cout<<"right green"<<endl;
+						counter+= 2;
+						
 					}
-				}
+				//}
 			}
 		}
 
@@ -273,15 +276,26 @@ int main() {
 			RS -= error;
 			LS +=error;
 		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
+		printf("counter: %d", counter);
 		printf("-------\n"); 
+		
 		
 		if(stop_motors){
 			sendSpeed(0, 0, 0, 0, 0);
 		}
 		else{
-			sendSpeed(0, LS, LS, RS, RS);
+			sendSpeed(counter, LS, LS, RS, RS);
 		}
-		
+		if(counter==1||counter==2){
+			this_thread::sleep_for(std::chrono::seconds(2));
+		}
+		else if(counter == 3){
+			this_thread::sleep_for(std::chrono::seconds(4));
+		}
+		else{
+			
+		}
+		counter = 0;
 		
 			
 		//imshow("Left", leftDisplay);
