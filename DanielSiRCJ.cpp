@@ -33,9 +33,9 @@ int uart0_filestream = -2;
 char buff[100];
 char rx_buff[100];
 int rx_length = 0;
-double kp = 0.5;
-int RS =25;
-int LS = 25;
+double kp = 0.77;
+int RS =30;
+int LS = 30;
 
 int targetSpeed = 30;
 
@@ -131,11 +131,11 @@ int main() {
 
         
         //threhshold for green for sr
-        inRange(green,Scalar(87,196,87), Scalar(114,255,255),green);
+        inRange(green,Scalar(56, 84, 29), Scalar(103, 255,231),green);
         //threshold green for home
         //~ inRange(green,Scalar(77,168,59),Scalar(86,255,167), green);
         //threshold for line sr
-        inRange(frame, Scalar(119, 106, 22), Scalar(131, 172,156), frame);
+        inRange(frame, Scalar(98, 74, 18), Scalar(136, 185,180), frame);
         //home threshold for line
         //threshold(frame,frame,170,255,THRESH_BINARY_INV);
         //~ inRange(frame, Scalar(h_low,s_low,v_low),Scalar(h_high,s_high,v_high),frame);
@@ -163,8 +163,6 @@ int main() {
 		circle(display,Point(cx,50),10,Scalar(255,255,255),-1);
 		line(display,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(0,255,0),LINE_8);
 		
-		
-		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
 		//double greenError = (img.cols/2.0)-cx;
 		
 		//double scaledown = 0.0009;
@@ -235,7 +233,16 @@ int main() {
 		
 		*/
 		for(int i = 0;i<(int)green_cont.size();i++){
-			if(contourArea(green_cont[i])>5000){
+			int cy = 0;
+			//finds centroid of the green suqare so we can orient it so it is in the center of screen
+			Moments green_moment = moments(green_cont[i]);
+			if(contourArea(green_cont[i])!=0){
+				cy = static_cast<int>(green_moment.m01/green_moment.m00);
+			}
+			
+			
+			if(contourArea(green_cont[i])>5000&&cy>=170){
+				cout<<"cy"<<cy<<endl;
 				cout<<"contourArea"<<contourArea(green_cont[i])<<endl;
 				Rect green_square = boundingRect(green_cont[i]);
 				rectangle(display,green_square,Scalar(255,0,0),2);
@@ -243,15 +250,30 @@ int main() {
 				cout<<green_square.x<<" "<<green_square.y<<endl;
 				top = Point(green_square.x,green_square.y);
 				top.x += green_square.width/2;
-				circle(display,top,10,Scalar(255,255,255),-1);
+				top.y -= 30;
+				//~ stop_motors = 1;
+				circle(display,top,10,Scalar(255,0,0),-1);
+				Vec3b color = frame.at<Vec3b>(top.x,top.y);
+				cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
+				
+				if(color[0]==255){
+					left.x = green_square.x;
+					left.y = green_square.y;
+					if(left.x<frame.cols/2){
+						cout<<"left green"<<endl;
+					}
+					else{
+						cout<<"right green"<<endl;
+					}
+				}
 			}
 		}
 
-		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
-		printf("-------\n"); 
+		
 			RS -= error;
 			LS +=error;
 		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
+		printf("-------\n"); 
 		
 		if(stop_motors){
 			sendSpeed(0, 0, 0, 0, 0);
@@ -267,7 +289,7 @@ int main() {
 		//imshow("Right", rightDisplay);	
 		
         imshow("color+contour", display);
-         
+        imshow("threshold", frame);
         int key = waitKey(1);
         if (key == 'q') break;
         else if(key == ' ') stop_motors = !stop_motors;
