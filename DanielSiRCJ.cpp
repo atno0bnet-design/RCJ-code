@@ -1,4 +1,4 @@
-
+      
 #include "opencv2/opencv.hpp"
 #include <lccv.hpp>
 #include <vector>
@@ -103,6 +103,7 @@ int main() {
     while(rx_length <= 0){
 		rx_length = read(uart0_filestream,(void*)rx_buff,9);
 	}
+	rx_length = 0;
 	
 	
 	int stop_motors = 0;
@@ -119,7 +120,7 @@ int main() {
         }
         RS = 25;
         LS = 25;
-      
+		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
         
         
@@ -243,7 +244,7 @@ int main() {
 			}  
 			
 			
-			if(contourArea(green_cont[i])>5000&&(cy>=190||counter!=0)){
+			if(contourArea(green_cont[i])>5000&&cy>=250){
 				Rect green_square = boundingRect(green_cont[i]);
 				rectangle(display,green_square,Scalar(255,0,0),2);
 				Point left,top, right,bottom;
@@ -260,17 +261,53 @@ int main() {
 					left.x = green_square.x;
 					left.y = green_square.y;
 					if(left.x<frame.cols/2){
-						cout<<"left green"<<endl;
+						cout<<"l"<<counter<<endl;
 						counter++;
 					}
 					else{
-						cout<<"right green"<<endl;
+						cout<<"r"<<counter<<endl;
 						counter+= 2;
 						
 					}
 				//}
 			}
 		}
+		
+		if(counter!=0){
+			for(int i = 0;i<(int)green_cont.size();i++){
+				if(contourArea(green_cont[i])>5000){
+					Rect green_square = boundingRect(green_cont[i]);
+					rectangle(display,green_square,Scalar(255,0,0),2);
+					Point left,top, right,bottom;
+					cout<<green_square.x<<" "<<green_square.y<<endl;
+					top = Point(green_square.x,green_square.y);
+					top.x += green_square.width/2;
+					top.y -= 15;
+					//~ stop_motors = 1;
+					circle(display,top,10,Scalar(255,0,0),-1);
+					Vec3b color = frame.at<Vec3b>(top.x,top.y);
+					cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
+				
+					//if(color[0]==255){
+						left.x = green_square.x;
+						left.y = green_square.y;
+						if(left.x<frame.cols/2&&counter!=2){
+							cout<<"l"<<counter<<endl;
+							counter++;
+						}
+						else{
+							cout<<"r"<<counter<<endl;
+							counter+= 2;
+						
+						} 
+					//}
+				}
+			}
+		}
+		
+		
+		
+		
 
 		
 			RS -= error;
@@ -287,14 +324,21 @@ int main() {
 			sendSpeed(counter, LS, LS, RS, RS);
 		}
 		if(counter==1||counter==2){
-			this_thread::sleep_for(std::chrono::seconds(2));
+			while(rx_length <= 0){
+				rx_length = read(uart0_filestream,(void*)rx_buff,9);
+			}
 		}
 		else if(counter == 3){
-			this_thread::sleep_for(std::chrono::seconds(4));
+
+			cout<<"middle"<<endl;
+			while(1);
+			while(rx_length <= 0){
+				rx_length = read(uart0_filestream,(void*)rx_buff,9);
+			}
 		}
 		else{
 			
-		}
+			}
 		counter = 0;
 		
 			
