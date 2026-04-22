@@ -1,3 +1,5 @@
+
+
 #include <Adafruit_NeoPixel.h>
 #define NUMPIXELS 24
 #define PIN 7
@@ -5,8 +7,10 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 
 int condition = 0;
-int L_motor = 0;
-int R_motor = 0;
+int FL_motor = 0;
+int BL_motor = 0;
+int FR_motor = 0;
+int BR_motor = 0;
 
 enum bub{l1=50,l2=50,r1=50,r2=50};
 int cmap(int val){
@@ -34,32 +38,31 @@ void motor::speed(int val){
       analogWrite(rpin, map_speed);
     }
 }
-motor motorR2{10,11};
-motor motorR1{13,12};
-motor motorL1{15,14};
-motor motorL2{9,8};
+motor motorFR{11,10};
+motor motorBR{12,13};
+motor motorFL{15,14};
+motor motorBL{9,8};
+
 void stop(int time)
 {
   
-  motorR1.speed(0);
-  motorL1.speed(0);
-  motorR2.speed(0);
-  motorL2.speed(0);
+  motorFR.speed(0);
+  motorFL.speed(0);
+  motorBR.speed(0);
+  motorBL.speed(0);
   delay(time);
   
 }
 
-
-void move(int a, int b){
-  motorR1.speed(a);
-  motorR2.speed(a);
-  motorL1.speed(b);
-  motorR2.speed(b);
+void move(int FL, int BL, int FR, int BR){
+  motorFL.speed(FL);
+  motorBL.speed(BL);
+  motorFR.speed(-FR);
+  motorBR.speed(-BR);
 }
 
 void setup() {
 
-  stop(0);
   Serial.begin(115200);
   Serial.println("Hello");
   Serial1.setRX(17);
@@ -68,22 +71,69 @@ void setup() {
   delay(2000);
   
   pinMode(20, INPUT);
-  while(digitalRead(20)==0);
+  pinMode(21, INPUT);
+  while(digitalRead(21));
   pixels.begin();
-  pixels.setBrightness(50);
+  pixels.setBrightness(20);
   for(int i = 0;i<NUMPIXELS;i++){
-    pixels.setPixelColor(i, pixels.Color(100,100,100));
+    pixels.setPixelColor(i, pixels.Color(255,255,255));
   }
   pixels.show();
   Serial1.write('a');
 }
 
 void loop(){
+  Serial.println("checking...");
   if(Serial1.available() >0){
-        condition = Serial1.parseInt();
-        R_motor = Serial1.parseInt();
-        L_motor = Serial1.parseInt();
-        move(R_motor,L_motor);
+
+    condition = Serial1.parseInt();
+    FL_motor = Serial1.parseInt();
+    BL_motor = Serial1.parseInt();
+    FR_motor = Serial1.parseInt();
+    BR_motor = Serial1.parseInt();
+      
+
+    Serial.print("Cond: ");
+    Serial.println(condition);
+    Serial.print("FL_motor: ");
+    Serial.println(FL_motor);
+    Serial.print("BL_motor: ");
+    Serial.println(BL_motor);
+    Serial.println();
+    
+    switch(condition)
+    {
+        case 1:{
+            move(-30, -30, 30, 30);
+            delay(3000);  
+            move(30,30,30,30);
+            delay(1000);
+            
+            stop(2000);
+            Serial1.write('a');
+            
+            break;
+        }
+        case 2:{
+          move(30, 30, -30, -30);
+          delay(3000);
+          move(30,30,30,30);
+          delay(1000);
+          stop(2000);
+          Serial1.write('a');
+          break;
+        }
+        case 3:{
+          move(30,30,-30,-30);
+          delay(4000);
+          stop(2000000);
+          break;
+        }
+        default:{
+          move(FL_motor, BL_motor, FR_motor, BR_motor);
+        }
+    }
+    
+
   }
-  
 }
