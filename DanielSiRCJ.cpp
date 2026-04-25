@@ -122,15 +122,17 @@ int main() {
         LS = 25;
 		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
-        
+        blur(frame,frame,Size(7 ,7));
         
         Mat img = frame.clone();
         Mat display = img.clone();
+        
         Mat green = frame.clone();
         cvtColor(green,green,COLOR_BGR2HSV);
         medianBlur(frame,frame,3);
         cvtColor(frame, frame, COLOR_BGR2HSV);
 
+        
         
         //threhshold for green for sr
         inRange(green,Scalar(56, 84, 29), Scalar(103, 255,231),green);
@@ -257,19 +259,22 @@ int main() {
 				Vec3b color = frame.at<Vec3b>(top.x,top.y);
 				cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 				
-				//if(color[0]==255){
+				if(color[0]==255){
 					left.x = green_square.x;
 					left.y = green_square.y;
 					if(left.x<frame.cols/2){
-						cout<<"l"<<counter<<endl;
+						cout<<"left"<<counter<<endl;
 						counter++;
 					}
 					else{
-						cout<<"r"<<counter<<endl;
+						cout<<"right"<<counter<<endl;
 						counter+= 2;
 						
 					}
-				//}
+				}
+				else{
+					cout<<"flase"<<endl;
+				}
 			}
 		}
 		
@@ -283,37 +288,39 @@ int main() {
 					top = Point(green_square.x,green_square.y);
 					top.x += green_square.width/2;
 					top.y -= 15;
-					//~ stop_motors = 1;
 					circle(display,top,10,Scalar(255,0,0),-1);
 					Vec3b color = frame.at<Vec3b>(top.x,top.y);
 					cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
-				
-					//if(color[0]==255){
+					
+					if(color[0]==255){
 						left.x = green_square.x;
 						left.y = green_square.y;
-						if(left.x<frame.cols/2&&counter!=2){
-							cout<<"l"<<counter<<endl;
+						if(left.x<frame.cols/2){
+							cout<<"left"<<counter<<endl;
+							if(counter!=1);
 							counter++;
 						}
 						else{
-							cout<<"r"<<counter<<endl;
+							cout<<"right"<<counter<<endl;
+							if(counter!=2);
 							counter+= 2;
 						
-						} 
-					//}
+						}
+					}
+					else{
+						cout<<"flase"<<endl;
+					}
 				}
 			}
 		}
-		
-		
+
 		
 		
 
 		
 			RS -= error;
 			LS +=error;
-		cout<<"R:"<<RS<<"   "<<"L:"<<LS<<"  "<<error<<endl;
-		printf("counter: %d", counter);
+		//printf("counter: %d", counter);
 		printf("-------\n"); 
 		
 		
@@ -328,7 +335,7 @@ int main() {
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
 			}
 		}
-		else if(counter == 3){
+		else if(counter >= 3){
 
 			cout<<"middle"<<endl;
 			while(1);
@@ -336,9 +343,11 @@ int main() {
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
 			}
 		}
+		
 		else{
 			
-			}
+		}
+
 		counter = 0;
 		
 			

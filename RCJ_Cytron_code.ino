@@ -125,8 +125,10 @@ void loop(){
         }
         case 3:{
           move(30,30,-30,-30);
-          delay(4000);
-          stop(2000000);
+          delay(6700);
+          move(30,30,30,30);
+          delay(1000);
+          stop(1000);
           break;
         }
         default:{
