@@ -143,7 +143,7 @@ int main() {
         //home threshold for line
         //threshold(frame,frame,170,255,THRESH_BINARY_INV);
         //~ inRange(frame, Scalar(h_low,s_low,v_low),Scalar(h_high,s_high,v_high),frame);
-        
+        imshow("not failure", frame);
         findContours(frame,contours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
         vector<Point> black_line, left_line, right_line, mid_line, bot_line;
         if(contours.size()>0){
@@ -253,10 +253,10 @@ int main() {
 				cout<<green_square.x<<" "<<green_square.y<<endl;
 				top = Point(green_square.x,green_square.y);
 				top.x += green_square.width/2;
-				top.y -= 15;
+				top.y -= 60;
 				//~ stop_motors = 1;
 				circle(display,top,10,Scalar(255,0,0),-1);
-				Vec3b color = frame.at<Vec3b>(top.x,top.y);
+				Vec3b color = frame.at<Vec3b>(top.y,top.x );
 				cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 				
 				if(color[0]==255){
@@ -267,8 +267,9 @@ int main() {
 						counter++;
 					}
 					else{
+						counter+= 4;
 						cout<<"right"<<counter<<endl;
-						counter+= 2;
+						
 						
 					}
 				}
@@ -280,15 +281,21 @@ int main() {
 		
 		if(counter!=0){
 			for(int i = 0;i<(int)green_cont.size();i++){
-				if(contourArea(green_cont[i])>5000){
+				int cy = 0;
+			//finds centroid of the green suqare so we can orient it so it is in the center of screen
+			Moments green_moment = moments(green_cont[i]);
+			if(contourArea(green_cont[i])!=0){
+				cy = static_cast<int>(green_moment.m01/green_moment.m00);
+			}  
+				if(contourArea(green_cont[i])>5000&&cy>=200){
 					Rect green_square = boundingRect(green_cont[i]);
 					rectangle(display,green_square,Scalar(255,0,0),2);
 					Point left,top, right,bottom;
 					cout<<green_square.x<<" "<<green_square.y<<endl;
-					top = Point(green_square.x,green_square.y);
+					top = Point(green_square.x+70,green_square.y);
 					top.x += green_square.width/2;
-					top.y -= 15;
-					circle(display,top,10,Scalar(255,0,0),-1);
+					top.y -= 60;
+					circle(display,top,2,Scalar(255,0,0),-1);
 					Vec3b color = frame.at<Vec3b>(top.x,top.y);
 					cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 					
@@ -297,14 +304,11 @@ int main() {
 						left.y = green_square.y;
 						if(left.x<frame.cols/2){
 							cout<<"left"<<counter<<endl;
-							if(counter!=1);
 							counter++;
 						}
 						else{
-							cout<<"right"<<counter<<endl;
-							if(counter!=2);
-							counter+= 2;
-						
+								counter+= 4;
+								cout<<"right"<<counter<<endl;
 						}
 					}
 					else{
@@ -330,12 +334,12 @@ int main() {
 		else{
 			sendSpeed(counter, LS, LS, RS, RS);
 		}
-		if(counter==1||counter==2){
+		if(counter%2==0||counter%5==0){
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
 			}
 		}
-		else if(counter >= 3){
+		else if(counter >= 5){
 
 			cout<<"middle"<<endl;
 			while(1);
@@ -366,5 +370,6 @@ int main() {
 	sendSpeed(0, 0, 0, 0, 0);
     destroyAllWindows();
     cam.stopVideo();
+    cout<<"hi"<<endl;
     return 0;
 }
