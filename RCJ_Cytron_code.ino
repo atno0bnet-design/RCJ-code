@@ -72,13 +72,16 @@ void setup() {
   
   pinMode(20, INPUT);
   pinMode(21, INPUT);
-  while(digitalRead(21));
+
   pixels.begin();
   pixels.setBrightness(20);
   for(int i = 0;i<NUMPIXELS;i++){
     pixels.setPixelColor(i, pixels.Color(255,255,255));
   }
   pixels.show();
+
+  while(digitalRead(21));
+    
   Serial1.write('a');
 }
 

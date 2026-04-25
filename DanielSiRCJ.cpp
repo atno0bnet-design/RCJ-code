@@ -149,6 +149,14 @@ int main() {
         if(contours.size()>0){
 			black_line = *max_element(contours.begin(), contours.end(), contour_compare);
 			drawContours(display,vector<vector<Point>>(1,black_line),0,Scalar(0,0,255), 3);
+			Moments m = moments(black_line);		
+			double cx = m.m10/m.m00;
+			double error = ((float)m.m10/m.m00-(frame.cols/2.0))*kp;
+			cout<<"cx:"<<error<<endl;
+			circle(display,Point(cx,50),10,Scalar(255,255,255),-1);
+			line(display,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(0,255,0),LINE_8);
+			RS -= error;
+			LS +=error;
 		}
 		else{
 				cout<<"failure"<<endl;
@@ -160,12 +168,7 @@ int main() {
 		
 		drawContours(display,green_cont,-1,Scalar(0,255,0), 3);
 		
-		Moments m = moments(black_line);		
-		double cx = m.m10/m.m00;
-		double error = ((float)m.m10/m.m00-(frame.cols/2.0))*kp;
-		cout<<"cx:"<<error<<endl;
-		circle(display,Point(cx,50),10,Scalar(255,255,255),-1);
-		line(display,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(0,255,0),LINE_8);
+cout<<"failure2"<<endl;
 		
 		//double greenError = (img.cols/2.0)-cx;
 		
@@ -185,57 +188,6 @@ int main() {
 		Mat leftDisplay = display(leftSlice);
 		Mat midDisplay = display(midSlice);
 		Mat rightDisplay = display(rightSlice);
-		//imshow("mid",midDisplay);
-		
-		/*int leftArea = 0;
-		int rightArea  = 0;
-		int midArea = 0;
-		findContours(bottomHalf,botHaf,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-		if(botHaf.size()>0){
-			bot_line = *max_element(botHaf.begin(), botHaf.end(), contour_compare);
-			if(contourArea(bot_line)<100){
-					kp = 0.006;
-					cout<<"kp change"<<endl;
-			}
-		}
-		
-		findContours(leftImg,left,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-		
-		if(left.size()>0){
-			left_line = *max_element(left.begin(), left.end(), contour_compare);
-			drawContours(leftDisplay,vector<vector<Point>>(1,left_line),0,Scalar(0,0,255), 3);
-			leftArea = contourArea(left_line);
-		}
-
-		findContours(midImg,mid,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-		
-		if(mid.size()>0){
-			mid_line = *max_element(mid.begin(), mid.end(), contour_compare);
-			drawContours(midDisplay,vector<vector<Point>>(1,mid_line),0,Scalar(0,0,255), 3);
-
-					cout<<"midsize"<<mid.size()<<endl;
-			midArea = contourArea(mid_line);
-		}
-		findContours(rightImg,right,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-		
-		if(right.size()>0){
-			right_line = *max_element(right.begin(), right.end(), contour_compare);
-			drawContours(rightDisplay,vector<vector<Point>>(1,right_line),0,Scalar(0,0,255), 3);
-			rightArea = contourArea(right_line);
-		}
-		
-		
-		printf("right area: %d\n", rightArea);
-		printf("left area: %d\n", leftArea);
-		
-		int lineError = rightArea - leftArea;
-		int delta = (lineError*kp);
-		LS = targetSpeed + delta;
-		RS = targetSpeed - delta;
-		
-		printf("delta: %d\n", delta);
-		
-		*/
 		
 		for(int i = 0;i<(int)green_cont.size();i++){
 			int cy = 0;
@@ -274,10 +226,12 @@ int main() {
 					}
 				}
 				else{
-					cout<<"flase"<<endl;
+					cout<<"false"<<endl;
 				}
 			}
 		}
+		
+		cout<<"failure3"<<endl;
 		
 		if(counter!=0){
 			for(int i = 0;i<(int)green_cont.size();i++){
@@ -312,7 +266,7 @@ int main() {
 						}
 					}
 					else{
-						cout<<"flase"<<endl;
+						cout<<"false"<<endl;
 					}
 				}
 			}
@@ -320,12 +274,11 @@ int main() {
 
 		
 		
-
+cout<<"failure4"<<endl;
 		
-			RS -= error;
-			LS +=error;
+			
 		//printf("counter: %d", counter);
-		printf("-------\n"); 
+		printf("-------%d---------\n",counter); 
 		
 		
 		if(stop_motors){
@@ -334,14 +287,20 @@ int main() {
 		else{
 			sendSpeed(counter, LS, LS, RS, RS);
 		}
-		if(counter%2==0||counter%5==0){
+		
+		
+		
+		if((counter%2==0||counter%5==0)&&counter!=0){
+			rx_length = 0;
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
+				cout<<"waiting 4 green"<<endl;
 			}
 		}
 		else if(counter >= 5){
 
 			cout<<"middle"<<endl;
+			
 			while(1);
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
@@ -365,6 +324,9 @@ int main() {
         if (key == 'q') break;
         else if(key == ' ') stop_motors = !stop_motors;
         //else if(key == 'g') stop_motors = 0;
+        
+        
+        cout<<"failure5"<<endl;
     }
 
 	sendSpeed(0, 0, 0, 0, 0);
