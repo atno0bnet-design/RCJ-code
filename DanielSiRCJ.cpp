@@ -34,7 +34,7 @@ int uart0_filestream = -2;
 char buff[100];
 char rx_buff[100];
 int rx_length = 0;
-double kp = 0.77;
+double kp = 0.73;
 int RS =30;
 int LS = 30;
 
@@ -91,7 +91,7 @@ int main() {
     Mat slices[3];
     Mat gray, blurred, edges;
     Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-	vector<vector<Point>> contours,green_cont,mid, left, right,botHaf;
+	vector<vector<Point>> contours,green_cont,mid, left, right,bot,top;
     namedWindow("Frame");
     namedWindow("Edges");
     
@@ -143,9 +143,8 @@ int main() {
         //home threshold for line
         //threshold(frame,frame,170,255,THRESH_BINARY_INV);
         //~ inRange(frame, Scalar(h_low,s_low,v_low),Scalar(h_high,s_high,v_high),frame);
-        imshow("not failure", frame);
         findContours(frame,contours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-        vector<Point> black_line, left_line, right_line, mid_line, bot_line;
+        vector<Point> black_line, left_line, right_line, top_line, bot_line;
         if(contours.size()>0){
 			black_line = *max_element(contours.begin(), contours.end(), contour_compare);
 			drawContours(display,vector<vector<Point>>(1,black_line),0,Scalar(0,0,255), 3);
@@ -161,6 +160,9 @@ int main() {
 		else{
 				cout<<"failure"<<endl;
 		}
+		
+		
+		
 		
 
 		
@@ -178,17 +180,57 @@ int main() {
 		Rect leftSlice(Point(0,0),Point(img.cols*(1/2.0),img.rows));
 		Rect midSlice(Point(img.cols*(1/5.0),0),Point(img.cols*(4/5.0),img.rows));
 		Rect rightSlice(Point(img.cols*(1/2.0),0),Point(img.cols,img.rows));
-		Rect botHalf(Point(0,img.rows/2),Point(img.cols,img.rows));
+		Rect botHalf(Point(0,img.rows*(3/4.0)),Point(img.cols,img.rows));
+		Rect tHalf(Point(0,img.rows*(1/6.0)),Point(img.cols,img.rows*(3/4.0)));
+		
+		
 		
 		Mat leftImg = frame(leftSlice);
 		Mat midImg = frame(midSlice);
 		Mat rightImg = frame(rightSlice);
 		Mat bottomHalf = frame(botHalf);
+		Mat topHalf = frame(tHalf);
 		
+		
+		findContours(bottomHalf,bot,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		findContours(topHalf,top,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		
+		
+		imshow("bottom half", bottomHalf);
+		imshow("top half", topHalf);
+		
+		
+		Mat botDisplay = display(botHalf);
+		Mat topDisplay = display(tHalf);
 		Mat leftDisplay = display(leftSlice);
 		Mat midDisplay = display(midSlice);
 		Mat rightDisplay = display(rightSlice);
+
 		
+		
+		if(top.size()>0){
+			top_line = *max_element(top.begin(), top.end(), contour_compare);
+			drawContours(topDisplay,vector<vector<Point>>(1,top_line),0,Scalar(0,0,255), 3);
+		}
+		else{
+				cout<<"gap"<<endl;
+				LS = 25;
+				RS = 25;
+		}
+		
+		if(bot.size()>0){
+			bot_line = *max_element(bot.begin(), bot.end(), contour_compare);
+			drawContours(botDisplay,vector<vector<Point>>(1,bot_line),0,Scalar(0,0,255), 3);
+		}
+		else{
+				cout<<"gap"<<endl;
+				RS = 25;
+				LS = 25;
+		}
+		
+		
+	
 		for(int i = 0;i<(int)green_cont.size();i++){
 			int cy = 0;
 			//finds centroid of the green suqare so we can orient it so it is in the center of screen
@@ -312,7 +354,8 @@ int main() {
 		//imshow("Left", leftDisplay);
 		imshow("Mid", midDisplay);
 		//imshow("Right", rightDisplay);	
-		
+		imshow("bot123", botDisplay);
+		imshow("top123", topDisplay);
         imshow("color+contour", display);
         imshow("threshold", frame);
         int key = waitKey(1);

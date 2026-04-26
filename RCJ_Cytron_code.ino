@@ -5,6 +5,11 @@
 #define PIN 7
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
+#include <Wire.h>
+#include <Adafruit_BNO055.h>
+
+Adafruit_BNO055 bno(55,0x28);
+
 
 int condition = 0;
 int FL_motor = 0;
@@ -61,6 +66,63 @@ void move(int FL, int BL, int FR, int BR){
   motorBR.speed(-BR);
 }
 
+
+void turnright(float degrees) {
+  sensors_event_t sensorData;
+  bno.getEvent(&sensorData);
+  float startHeading = sensorData.orientation.x;
+  float targetHeading = startHeading + degrees;
+  if (targetHeading >= 360) targetHeading -= 360;
+  Serial.print("Turning from ");
+  Serial.print(startHeading);
+  Serial.print(" to ");
+  Serial.println(targetHeading);
+
+  while (true) {
+    bno.getEvent(&sensorData);
+    double currentHeading = sensorData.orientation.x;
+
+    float turn = targetHeading - currentHeading;
+
+    if (turn < -180) turn += 360;
+    if (turn > 180) turn -= 360;
+
+    if (abs(turn) < 2) break;
+
+    move(25,25,-25,-25);
+    delay(10);
+  }
+  stop(1000);
+}
+
+void turnleft(float degrees) {
+  sensors_event_t sensorData;
+  bno.getEvent(&sensorData);
+  float startHeading = sensorData.orientation.x;
+  float targetHeading = startHeading - degrees;
+  if (targetHeading >= 360) targetHeading -= 360;
+  Serial.print("Turning from ");
+  Serial.print(startHeading);
+  Serial.print(" to ");
+  Serial.println(targetHeading);
+
+  while (true) {
+    bno.getEvent(&sensorData);
+    double currentHeading = sensorData.orientation.x;
+
+    float turn = targetHeading - currentHeading;
+
+    if (turn < -180) turn += 360;
+    if (turn > 180) turn -= 360;
+
+    if (abs(turn) < 2) break;
+
+    move(-25,-25,25,25);
+    delay(10);
+  }
+  stop(1000);
+}
+
 void setup() {
 
   Serial.begin(115200);
@@ -69,6 +131,13 @@ void setup() {
   Serial1.setTX(16);
   Serial1.begin(115200);
   delay(2000);
+  Wire.setSCL(29);
+  Wire.setSDA(28);
+  Wire.begin();
+  if(bno.begin(OPERATION_MODE_IMUPLUS)==0){
+    Serial.println("Bno failed");
+    while(1);
+  }
   
   pinMode(20, INPUT);
   pinMode(21, INPUT);
@@ -107,30 +176,26 @@ void loop(){
     switch(condition)
     {
         case 1:{
-            move(-30, -30, 30, 30);
-            delay(3000);  
-            move(30,30,30,30);
-            delay(1000);
-            
-            stop(2000);
+            turnleft(80);
+            move(20,20,20,20);
+            delay(900);
+            stop(000);
             Serial1.write('a');
             
             break;
         }
         case 2:{
-          move(30, 30, -30, -30);
-          delay(3000);
-          move(30,30,30,30);
-          delay(1000);
-          stop(2000);
+          turnright(80);
+          move(20,20,20,20);
+          delay(900);
+          stop(1000);
           Serial1.write('a');
           break;
         }
         case 3:{
-          move(30,30,-30,-30);
-          delay(6700);
-          move(30,30,30,30);
-          delay(1000);
+          turnright(180);
+          move(20,20,20,20);
+          delay(900);
           stop(1000);
           break;
         }
