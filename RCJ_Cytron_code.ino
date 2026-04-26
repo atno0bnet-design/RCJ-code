@@ -9,8 +9,8 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 #include <Adafruit_BNO055.h>
 
 Adafruit_BNO055 bno(55,0x28);
-
-
+float og = 0;
+float data = 0;
 int condition = 0;
 int FL_motor = 0;
 int BL_motor = 0;
@@ -64,6 +64,26 @@ void move(int FL, int BL, int FR, int BR){
   motorBL.speed(BL);
   motorFR.speed(-FR);
   motorBR.speed(-BR);
+}
+
+void getYaw(float *data){
+    int counter = 0;
+    *data = 0;
+    while(*data == 0 && counter++<100){
+        sensors_event_t n;
+        bno.getEvent(&n);
+        *data = n.orientation.x;
+    }
+}
+
+void getRoll(float *data){
+    int counter = 0;
+    *data = 0;
+    while(*data == 0 && counter++<100){
+        sensors_event_t n;
+        bno.getEvent(&n);
+        *data = n.orientation.z;
+    }
 }
 
 
@@ -150,21 +170,35 @@ void setup() {
   pixels.show();
 
   while(digitalRead(21));
-    
+  
   Serial1.write('a');
+  getRoll(&og);
 }
 
 void loop(){
   Serial.println("checking...");
   if(Serial1.available() >0){
-
+    getRoll(&data);
+    Serial.print(data);
+    Serial.print(":");
+    Serial.println(og);
+    if(data>og+5){
+      Serial1.write('z');
+      og = data;  
+    }
+    if(data<og-5){
+      Serial1.write('x');
+    }
+    
+    Serial.println(data);
     condition = Serial1.parseInt();
     FL_motor = Serial1.parseInt();
     BL_motor = Serial1.parseInt();
     FR_motor = Serial1.parseInt();
     BR_motor = Serial1.parseInt();
+    
       
-
+    /*
     Serial.print("Cond: ");
     Serial.println(condition);
     Serial.print("FL_motor: ");
@@ -172,19 +206,23 @@ void loop(){
     Serial.print("BL_motor: ");
     Serial.println(BL_motor);
     Serial.println();
-    
+    */
     switch(condition)
     {
         case 1:{
+            move(20,20,20,20);
+            delay(200);
             turnleft(80);
             move(20,20,20,20);
-            delay(900);
+            delay(400);
             stop(000);
             Serial1.write('a');
             
             break;
         }
         case 2:{
+          move(20,20,20,20);
+          delay(400);
           turnright(80);
           move(20,20,20,20);
           delay(900);

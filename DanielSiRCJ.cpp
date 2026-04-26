@@ -34,9 +34,9 @@ int uart0_filestream = -2;
 char buff[100];
 char rx_buff[100];
 int rx_length = 0;
-double kp = 0.73;
-int RS =30;
-int LS = 30;
+double kp = 0.75;
+int RS =20;
+int LS = 20;
 
 int targetSpeed = 30;
 
@@ -118,8 +118,8 @@ int main() {
             cout << "Frame empty" << endl;
             break;
         }
-        RS = 25;
-        LS = 25;
+        RS = 20;
+        LS = 20;
 		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
         blur(frame,frame,Size(7 ,7));
