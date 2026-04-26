@@ -69,6 +69,18 @@ void getYaw(float *data){
     }
 }
 
+void getRoll(float *data){
+    int counter = 0;
+    *data = 0;
+    while(*data == 0 && counter++<100){
+        sensors_event_t n;
+        bno.getEvent(&n);
+        *data = n.orientation.z;
+    }
+}
+
+
+
 void turnright(float degrees) {
   sensors_event_t sensorData;
   bno.getEvent(&sensorData);
@@ -129,8 +141,8 @@ void turnleft(float degrees) {
 void setup() {
     Serial.begin(9600);
     delay(2000);
-    Wire.setSCL(17);
-    Wire.setSDA(16);
+    Wire.setSCL(29);
+    Wire.setSDA(28);
     Wire.begin();
     if(bno.begin(OPERATION_MODE_IMUPLUS)==0){
         Serial.println("Bno failed");
@@ -141,7 +153,7 @@ void setup() {
     pinMode(21, INPUT);
     float data;
     while(digitalRead(21)){
-      getYaw(&data);
+      getRoll(&data);
       Serial.println(data);
     }
 }
