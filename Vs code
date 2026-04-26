@@ -1,0 +1,109 @@
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <Adafruit_BNO055.h>
+
+Adafruit_BNO055 bno(55,0x28);
+
+
+int FL_motor = 0;
+int BL_motor = 0;
+int FR_motor = 0;
+int BR_motor = 0;
+
+enum bub{l1=50,l2=50,r1=50,r2=50};
+int cmap(int val){
+  int mapped = map(val, 0 , 100, 0, 255);
+  return constrain(mapped, 0, 255);
+
+}
+
+struct motor{
+  uint8_t fpin, rpin;
+  void speed(int val);
+};
+
+
+
+
+void motor::speed(int val){
+  int map_speed = cmap(abs(val));
+    if(val>0){
+      analogWrite(fpin, map_speed);
+      analogWrite(rpin, 0); 
+    }
+    else{
+      analogWrite(fpin, 0);
+      analogWrite(rpin, map_speed);
+    }
+}
+motor motorFR{11,10};
+motor motorBR{12,13};
+motor motorFL{15,14};
+motor motorBL{9,8};
+
+void stop(int time)
+{
+  
+  motorFR.speed(0);
+  motorFL.speed(0);
+  motorBR.speed(0);
+  motorBL.speed(0);
+  delay(time);
+  
+}
+
+void move(int FL, int BL, int FR, int BR){
+  motorFL.speed(FL);
+  motorBL.speed(BL);
+  motorFR.speed(-FR);
+  motorBR.speed(-BR);
+}
+void getYaw(float *data){
+    int counter = 0;
+    *data = 0;
+    while(*data == 0&&counter<100){
+        sensors_event_t n;
+        bno.getEvent(&n);
+        *data = n.orientation.x;
+    }
+}
+
+void turn(int degree){
+    float yaw;
+    getYaw(&yaw);
+    if(degree>0){
+        while(yaw<yaw+degree-2){
+            move(25,25,-25,-25);
+            getYaw(&yaw);
+        }
+    }
+    else{
+        yaw*=-1;
+        while(yaw>yaw+degree){
+             move(25,25,-25,-25);
+            getYaw(&yaw);
+            yaw*=-1;
+        }
+    }
+    stop(2000000);
+}
+
+void setup() {
+    Serial.begin(9600);
+    delay(2000);
+    Wire.setSCL(17);
+    Wire.setSDA(16);
+    Wire.begin();
+    if(bno.begin(OPERATION_MODE_IMUPLUS)==0){
+        Serial.println("Bno failed");
+        while(1);
+    }
+}
+
+
+
+
+void loop(){
+    turn(90);
+}
