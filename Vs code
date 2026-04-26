@@ -62,32 +62,69 @@ void move(int FL, int BL, int FR, int BR){
 void getYaw(float *data){
     int counter = 0;
     *data = 0;
-    while(*data == 0&&counter<100){
+    while(*data == 0 && counter++<100){
         sensors_event_t n;
         bno.getEvent(&n);
         *data = n.orientation.x;
     }
 }
 
-void turn(int degree){
-    float yaw;
-    getYaw(&yaw);
-    if(degree>0){
-        while(yaw<yaw+degree-2){
-            move(25,25,-25,-25);
-            getYaw(&yaw);
-        }
-    }
-    else{
-        yaw*=-1;
-        while(yaw>yaw+degree){
-             move(25,25,-25,-25);
-            getYaw(&yaw);
-            yaw*=-1;
-        }
-    }
-    stop(2000000);
+void turnright(float degrees) {
+  sensors_event_t sensorData;
+  bno.getEvent(&sensorData);
+  float startHeading = sensorData.orientation.x;
+  float targetHeading = startHeading + degrees;
+  if (targetHeading >= 360) targetHeading -= 360;
+  Serial.print("Turning from ");
+  Serial.print(startHeading);
+  Serial.print(" to ");
+  Serial.println(targetHeading);
+
+  while (true) {
+    bno.getEvent(&sensorData);
+    double currentHeading = sensorData.orientation.x;
+
+    float turn = targetHeading - currentHeading;
+
+    if (turn < -180) turn += 360;
+    if (turn > 180) turn -= 360;
+
+    if (abs(turn) < 2) break;
+
+    move(25,25,-25,-25);
+    delay(10);
+  }
+  stop(2000000);
 }
+
+void turnleft(float degrees) {
+  sensors_event_t sensorData;
+  bno.getEvent(&sensorData);
+  float startHeading = sensorData.orientation.x;
+  float targetHeading = startHeading - degrees;
+  if (targetHeading >= 360) targetHeading -= 360;
+  Serial.print("Turning from ");
+  Serial.print(startHeading);
+  Serial.print(" to ");
+  Serial.println(targetHeading);
+
+  while (true) {
+    bno.getEvent(&sensorData);
+    double currentHeading = sensorData.orientation.x;
+
+    float turn = targetHeading - currentHeading;
+
+    if (turn < -180) turn += 360;
+    if (turn > 180) turn -= 360;
+
+    if (abs(turn) < 2) break;
+
+    move(-25,-25,25,25);
+    delay(10);
+  }
+  stop(2000000);
+}
+
 
 void setup() {
     Serial.begin(9600);
@@ -99,11 +136,19 @@ void setup() {
         Serial.println("Bno failed");
         while(1);
     }
+
+
+    pinMode(21, INPUT);
+    float data;
+    while(digitalRead(21)){
+      getYaw(&data);
+      Serial.println(data);
+    }
 }
 
 
 
 
 void loop(){
-    turn(90);
+    turnleft(90);
 }
