@@ -167,8 +167,8 @@ int main() {
 		findContours(green, green_cont,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
 		
 		drawContours(display,green_cont,-1,Scalar(0,255,0), 3);
-		
-cout<<"failure2"<<endl;
+
+
 		
 		//double greenError = (img.cols/2.0)-cx;
 		
@@ -205,13 +205,13 @@ cout<<"failure2"<<endl;
 				cout<<green_square.x<<" "<<green_square.y<<endl;
 				top = Point(green_square.x,green_square.y);
 				top.x += green_square.width/2;
-				top.y -= 60;
+				top.y -= 30;
 				//~ stop_motors = 1;
 				circle(display,top,10,Scalar(255,0,0),-1);
-				Vec3b color = frame.at<Vec3b>(top.y,top.x );
-				cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
+				int color = frame.at<unsigned char>(top);
+				cout<<color<<endl;
 				
-				if(color[0]==255){
+				if(color==255){
 					left.x = green_square.x;
 					left.y = green_square.y;
 					if(left.x<frame.cols/2){
@@ -219,7 +219,7 @@ cout<<"failure2"<<endl;
 						counter++;
 					}
 					else{
-						counter+= 4;
+						counter+= 2;
 						cout<<"right"<<counter<<endl;
 						
 						
@@ -230,8 +230,7 @@ cout<<"failure2"<<endl;
 				}
 			}
 		}
-		
-		cout<<"failure3"<<endl;
+
 		
 		if(counter!=0){
 			for(int i = 0;i<(int)green_cont.size();i++){
@@ -248,9 +247,9 @@ cout<<"failure2"<<endl;
 					cout<<green_square.x<<" "<<green_square.y<<endl;
 					top = Point(green_square.x+70,green_square.y);
 					top.x += green_square.width/2;
-					top.y -= 60;
+					top.y -= 30;
 					circle(display,top,2,Scalar(255,0,0),-1);
-					Vec3b color = frame.at<Vec3b>(top.x,top.y);
+					Vec3b color = frame.at<Vec3b>(top.y,top.x);
 					cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 					
 					if(color[0]==255){
@@ -261,7 +260,7 @@ cout<<"failure2"<<endl;
 							counter++;
 						}
 						else{
-								counter+= 4;
+								counter+= 2;
 								cout<<"right"<<counter<<endl;
 						}
 					}
@@ -274,8 +273,6 @@ cout<<"failure2"<<endl;
 
 		
 		
-cout<<"failure4"<<endl;
-		
 			
 		//printf("counter: %d", counter);
 		printf("-------%d---------\n",counter); 
@@ -285,23 +282,21 @@ cout<<"failure4"<<endl;
 			sendSpeed(0, 0, 0, 0, 0);
 		}
 		else{
-			sendSpeed(counter, LS, LS, RS, RS);
+			sendSpeed((counter/2), LS, LS, RS, RS);
 		}
 		
 		
 		
-		if((counter%2==0||counter%5==0)&&counter!=0){
+		if((counter%2==0||counter%2==0)&&counter!=0){
 			rx_length = 0;
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
 				cout<<"waiting 4 green"<<endl;
 			}
 		}
-		else if(counter >= 5){
+		else if(counter == 6){
 
 			cout<<"middle"<<endl;
-			
-			while(1);
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
 			}
@@ -324,9 +319,6 @@ cout<<"failure4"<<endl;
         if (key == 'q') break;
         else if(key == ' ') stop_motors = !stop_motors;
         //else if(key == 'g') stop_motors = 0;
-        
-        
-        cout<<"failure5"<<endl;
     }
 
 	sendSpeed(0, 0, 0, 0, 0);
