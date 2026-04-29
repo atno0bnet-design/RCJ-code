@@ -178,25 +178,22 @@ void setup() {
 void loop(){
   Serial.println("checking...");
   if(Serial1.available() >0){
-    getRoll(&data);
-    Serial.print(data);
-    Serial.print(":");
-    Serial.println(og);
-    if(data>og+5){
-      Serial1.write('z');
-      og = data;  
-    }
-    if(data<og-5){
-      Serial1.write('x');
-    }
-    
-    Serial.println(data);
     condition = Serial1.parseInt();
     FL_motor = Serial1.parseInt();
     BL_motor = Serial1.parseInt();
     FR_motor = Serial1.parseInt();
     BR_motor = Serial1.parseInt();
-    
+    getRoll(&data);
+    Serial.print(data);
+    Serial.print(":");
+    Serial.println(og-5);
+    if(data<og-5){
+      Serial.println("increasing speed");
+      FL_motor += 15;
+      BL_motor += 15;
+      FR_motor += 15;
+      BR_motor += 15;
+    }
       
     /*
     Serial.print("Cond: ");
@@ -214,8 +211,8 @@ void loop(){
             delay(200);
             turnleft(80);
             move(20,20,20,20);
-            delay(400);
-            stop(000);
+            delay(1000);
+            stop(1000);
             Serial1.write('a');
             
             break;
@@ -225,16 +222,17 @@ void loop(){
           delay(400);
           turnright(80);
           move(20,20,20,20);
-          delay(900);
+          delay(1000);
           stop(1000);
           Serial1.write('a');
           break;
         }
         case 3:{
-          turnright(180);
+          turnright(185);
           move(20,20,20,20);
-          delay(900);
+          delay(1000);
           stop(1000);
+          Serial1.write('a');
           break;
         }
         default:{

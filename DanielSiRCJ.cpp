@@ -35,8 +35,8 @@ char buff[100];
 char rx_buff[100];
 int rx_length = 0;
 double kp = 0.75;
-int RS =20;
-int LS = 20;
+int RS =15;
+int LS = 15;
 
 int targetSpeed = 30;
 
@@ -118,20 +118,19 @@ int main() {
             cout << "Frame empty" << endl;
             break;
         }
-        RS = 20;
-        LS = 20;
+        RS = 17;
+        LS = 17;
 		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
         blur(frame,frame,Size(7 ,7));
-        
+        medianBlur(frame,frame,21);
         Mat img = frame.clone();
         Mat display = img.clone();
         
         Mat green = frame.clone();
         cvtColor(green,green,COLOR_BGR2HSV);
-        medianBlur(frame,frame,3);
+        
         cvtColor(frame, frame, COLOR_BGR2HSV);
-
         
         
         //threhshold for green for sr
@@ -139,7 +138,8 @@ int main() {
         //threshold green for home
         //~ inRange(green,Scalar(77,168,59),Scalar(86,255,167), green);
         //threshold for line sr
-        inRange(frame, Scalar(98, 74, 18), Scalar(136, 185,180), frame);
+        inRange(frame, Scalar(111, 42, 0), Scalar(167, 182,194), frame);
+        
         //home threshold for line
         //threshold(frame,frame,170,255,THRESH_BINARY_INV);
         //~ inRange(frame, Scalar(h_low,s_low,v_low),Scalar(h_high,s_high,v_high),frame);
@@ -177,11 +177,11 @@ int main() {
 		//double scaledown = 0.0009;
 
 		
-		Rect leftSlice(Point(0,0),Point(img.cols*(1/2.0),img.rows));
+		Rect leftSlice(Point(0,img.rows*(1/2.0)),Point(img.cols*(1/4.0),img.rows));
 		Rect midSlice(Point(img.cols*(1/5.0),0),Point(img.cols*(4/5.0),img.rows));
-		Rect rightSlice(Point(img.cols*(1/2.0),0),Point(img.cols,img.rows));
+		Rect rightSlice(Point(img.cols*(3/4.0),img.cols*(1/2.0)),Point(img.cols,img.rows));
 		Rect botHalf(Point(0,img.rows*(3/4.0)),Point(img.cols,img.rows));
-		Rect tHalf(Point(0,img.rows*(1/6.0)),Point(img.cols,img.rows*(3/4.0)));
+		Rect tHalf(Point(0,img.rows*(1/4.0)),Point(img.cols,img.rows*(3/4.0)));
 		
 		
 		
@@ -195,6 +195,10 @@ int main() {
 		findContours(bottomHalf,bot,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
 		findContours(topHalf,top,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
 		
+		findContours(rightImg,right,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		findContours(leftImg,left,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+		
+		
 		
 		
 		imshow("bottom half", bottomHalf);
@@ -207,9 +211,7 @@ int main() {
 		Mat midDisplay = display(midSlice);
 		Mat rightDisplay = display(rightSlice);
 
-		
-		
-		if(top.size()>0){
+		if(top.size()>0||(left.size()>0||right.size()>0)){
 			top_line = *max_element(top.begin(), top.end(), contour_compare);
 			drawContours(topDisplay,vector<vector<Point>>(1,top_line),0,Scalar(0,0,255), 3);
 		}
@@ -254,8 +256,8 @@ int main() {
 				cout<<color<<endl;
 				
 				if(color==255){
-					left.x = green_square.x;
-					left.y = green_square.y;
+					left.x = green_square.x+(green_square.x/2);
+					left.y = green_square.y+(green_square.y/2);
 					if(left.x<frame.cols/2){
 						cout<<"left"<<counter<<endl;
 						counter++;
@@ -295,8 +297,8 @@ int main() {
 					cout<<"red"<<static_cast<int>(color[2])<<"green"<<static_cast<int>(color[1])<<"blue"<<static_cast<int>(color[0])<<endl;
 					
 					if(color[0]==255){
-						left.x = green_square.x;
-						left.y = green_square.y;
+						left.x = green_square.x+(green_square.x/2);
+						left.y = green_square.y+(green_square.y/2);
 						if(left.x<frame.cols/2){
 							cout<<"left"<<counter<<endl;
 							counter++;
@@ -317,6 +319,7 @@ int main() {
 		
 			
 		//printf("counter: %d", counter);
+		cout<<"RS:"<<RS<<":"<<"LS:"<<LS<<endl;
 		printf("-------%d---------\n",counter); 
 		
 		
@@ -337,7 +340,7 @@ int main() {
 			}
 		}
 		else if(counter == 6){
-
+			rx_length = 0;
 			cout<<"middle"<<endl;
 			while(rx_length <= 0){
 				rx_length = read(uart0_filestream,(void*)rx_buff,9);
