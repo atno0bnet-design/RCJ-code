@@ -2,7 +2,7 @@
 
 #include <Adafruit_NeoPixel.h>
 #define NUMPIXELS 24
-#define PIN 7
+#define PIN 6
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 #include <Wire.h>
@@ -208,8 +208,8 @@ void loop(){
     {
         case 1:{
             move(20,20,20,20);
-            delay(200);
-            turnleft(80);
+            delay(400);
+            turnleft(70);
             move(20,20,20,20);
             delay(1000);
             stop(1000);
@@ -220,7 +220,7 @@ void loop(){
         case 2:{
           move(20,20,20,20);
           delay(400);
-          turnright(80);
+          turnright(70);
           move(20,20,20,20);
           delay(1000);
           stop(1000);
