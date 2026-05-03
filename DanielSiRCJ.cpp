@@ -118,8 +118,8 @@ int main() {
             cout << "Frame empty" << endl;
             break;
         }
-        RS = 13;
-        LS = 13;
+        RS = 15;
+        LS = 15;
 		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
         blur(frame,frame,Size(7 ,7));

@@ -214,10 +214,11 @@ void loop(){
     switch(condition)
     {
         case 1:{
+          //left
             move(20,20,20,20);
             delay(400);
-            turnleft(70);
-            move(20,20,20,20);
+            turnleft(75);
+            move(25,25,20,20);
             delay(1000);
             stop(1000);
             Serial1.write('a');
@@ -225,10 +226,11 @@ void loop(){
             break;
         }
         case 2:{
+          //right
           move(20,20,20,20);
           delay(400);
-          turnright(70);
-          move(20,20,20,20);
+          turnright(75);
+          move(20,20,25,25);
           delay(1000);
           stop(1000);
           Serial1.write('a');
