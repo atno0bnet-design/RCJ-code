@@ -210,13 +210,13 @@ int main() {
 		Mat leftDisplay = display(leftSlice);
 		Mat midDisplay = display(midSlice);
 		Mat rightDisplay = display(rightSlice);
-
-		if(top.size()>0||(left.size()>0||	right.size()>0)){
+			
+		if(top.size()>0||(left.size()>0||right.size()>0)){
 			top_line = *max_element(top.begin(), top.end(), contour_compare);
 			drawContours(topDisplay,vector<vector<Point>>(1,top_line),0,Scalar(0,0,255), 3);
 		}
 		else{
-				cout<<"gap"<<endl;
+				cout<<"top gap"<<endl;
 				LS = 25;
 				RS = 25;
 		}
@@ -226,10 +226,11 @@ int main() {
 			drawContours(botDisplay,vector<vector<Point>>(1,bot_line),0,Scalar(0,0,255), 3);
 		}
 		else{
-				cout<<"gap"<<endl;
+				cout<<"bot gap"<<endl;
 				RS = 25;
 				LS = 25;
 		}
+	
 		
 		
 	
