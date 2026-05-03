@@ -118,8 +118,8 @@ int main() {
             cout << "Frame empty" << endl;
             break;
         }
-        RS = 17;
-        LS = 17;
+        RS = 13;
+        LS = 13;
 		rx_length = 0;
         resize(frame,frame,Size(frame.cols/4,frame.rows/4));
         blur(frame,frame,Size(7 ,7));
@@ -211,7 +211,7 @@ int main() {
 		Mat midDisplay = display(midSlice);
 		Mat rightDisplay = display(rightSlice);
 
-		if(top.size()>0||(left.size()>0||right.size()>0)){
+		if(top.size()>0||(left.size()>0||	right.size()>0)){
 			top_line = *max_element(top.begin(), top.end(), contour_compare);
 			drawContours(topDisplay,vector<vector<Point>>(1,top_line),0,Scalar(0,0,255), 3);
 		}

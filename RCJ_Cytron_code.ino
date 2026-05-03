@@ -194,6 +194,13 @@ void loop(){
       FR_motor += 15;
       BR_motor += 15;
     }
+    if(data>og+5){
+      Serial.println("decreasing speed");
+      FL_motor -= 5;
+      BL_motor -= 5;
+      FR_motor -= 5;
+      BR_motor -= 5;
+    }
       
     /*
     Serial.print("Cond: ");
