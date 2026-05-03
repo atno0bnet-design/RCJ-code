@@ -34,7 +34,7 @@ int uart0_filestream = -2;
 char buff[100];
 char rx_buff[100];
 int rx_length = 0;
-double kp = 0.75;
+double kp = 0.78;
 int RS =15;
 int LS = 15;
 
@@ -319,6 +319,11 @@ int main() {
 		
 			
 		//printf("counter: %d", counter);
+		cout<<"RS:"<<RS<<":"<<"LS:"<<LS<<endl;
+		RS = (RS>50) ? RS * 0.25: RS;
+		RS = (RS<-50) ? RS * 0.25: RS;
+		LS = (LS>50) ? LS * 0.25: LS;
+		LS = (LS<-50) ? LS * 0.25:LS;
 		cout<<"RS:"<<RS<<":"<<"LS:"<<LS<<endl;
 		printf("-------%d---------\n",counter); 
 		
